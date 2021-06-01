@@ -105,7 +105,7 @@ def parsingResOfSensor(data):
             read_data = f.read()
             list_data = read_data.split(",")
             num_data = list(map(float, list_data))
-            print(num_data)
+            print("CO2:{0}, VOC:{1}, Humidity:{2}, Temperature:{3}, PM1:{4}, PM2.5:{5}, PM10:{6}, VOC now:{7}, VOC rvalue:{8}, VOC now rvalue:{9}, Reserve:{10}, State:{11}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11]))
 
         time.sleep(1)
 
@@ -160,5 +160,6 @@ if __name__ == "__main__":
         r_thread.start()
 
         
-
+# cmd 
+# /usr/bin/python3 /home/pi/work/pysensor/main.py
 
