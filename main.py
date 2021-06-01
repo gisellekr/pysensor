@@ -2,7 +2,7 @@ import serial
 import signal
 import threading
 import time
-import pickle
+# import pickle
 
 from serial.serialutil import Timeout
 
@@ -28,6 +28,7 @@ def parsingResOfSensor(data):
         crc_data.append(data[val])
 
     check_crc = makeCrc(crc_data)
+    # print("check_crc = %d, data[27] = %d"%(check_crc, data))
     if (check_crc != data[27]):
         return -1
 
@@ -94,8 +95,17 @@ def parsingResOfSensor(data):
         m_res.append(data[27])
 
         print(m_res)
-        with open("sdata.log", "wb") as f:
-            pickle.dump(m_res, f)
+        str_data = list(map(str, m_res))
+        with open("sdata.log", "w") as f:
+            # pickle.dump(m_res, f)
+            f.write(",".join(str_data))
+
+
+        with open("sdata.log", "r") as f:
+            read_data = f.read()
+            list_data = read_data.split(",")
+            num_data = list(map(float, list_data))
+            print(num_data)
 
         time.sleep(1)
 
@@ -109,17 +119,16 @@ def stopThread(signum, frame):
 def readThread(ser):
     global data_array
     global exit_thread
-    print(exit_thread)
-    while not exit_thread:
+    while True:
         try:
             data = ser.readline()
-            
             if data:
                 # print(data)
                 parsingResOfSensor(data)
 
         except serial.SerialException as e:
             break
+        time.sleep(1)
 
 
 def writeThread(ser):
@@ -128,6 +137,9 @@ def writeThread(ser):
     print(bytearray(send_data))
     ser.write(bytearray(send_data))
     threading.Timer(10, writeThread, args=(ser,)).start()
+    # 3600 is 1 Hour
+    # threading.Timer(3600, writeThread, args=(ser,)).start()
+
 
 
 if __name__ == "__main__":
@@ -137,7 +149,7 @@ if __name__ == "__main__":
     # 시리얼 열기
     ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
 
-    print(ser.is_open)
+    print("is_open = %d"%ser.is_open)
 
     if ser.is_open:
         # Request Command
