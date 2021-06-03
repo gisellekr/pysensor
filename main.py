@@ -207,7 +207,7 @@ def requestThread(str_station):
     parsingResOfAirKorea(iter_data)
 
     # 10s by Test
-    threading.Timer(10, requestThread, args=(str_station,)).start()
+    # threading.Timer(10, requestThread, args=(str_station,)).start()
     # 3600 is 1 Hour
     threading.Timer(3600, requestThread, args=(str_station,)).start()
 
