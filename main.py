@@ -3,14 +3,16 @@ import signal
 import threading
 import time
 # import pickle
+import sys
+import requests
+import station
 
-from serial.serialutil import Timeout
+from urllib.parse import urlencode, quote_plus
+from xml.etree import ElementTree
 
-# 데이터 저장 리스트
-data_array = []
-
-# 쓰레드 종료 변수
-exit_thread = False
+url_station = "http://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList"
+url_data = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty"
+de_key = "FiT7JZmgP3ia3n3gZS+0RAryoftJJxWjSOaRm2BR1dOoJRHeR1vOzwpAVDN9zb0OzAJIH5hqN/8EkLkZsKlP1Q=="
 
 def makeCrc(data):
     sum = 0
@@ -23,6 +25,8 @@ def makeCrc(data):
 def parsingResOfSensor(data):
     # m_res = {}
     m_res = []
+    # Sensor : 0
+    m_res.append("0")
     crc_data = []
     for val in range(len(data)-1):
         crc_data.append(data[val])
@@ -105,12 +109,56 @@ def parsingResOfSensor(data):
             read_data = f.read()
             list_data = read_data.split(",")
             num_data = list(map(float, list_data))
-            print("CO2:{0}, VOC:{1}, Humidity:{2}, Temperature:{3}, PM1:{4}, PM2.5:{5}, PM10:{6}, VOC now:{7}, VOC rvalue:{8}, VOC now rvalue:{9}, Reserve:{10}, State:{11}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11]))
+            print("Type:{0}, CO2:{1}, VOC:{2}, Humidity:{3}, Temperature:{4}, PM1:{5}, PM2.5:{6}, PM10:{7}, VOC now:{8}, VOC rvalue:{9}, VOC now rvalue:{10}, Reserve:{11}, State:{12}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11]), num_data[12])
 
         time.sleep(1)
 
+def parsingResOfAirKorea(data):
+    m_res = []
 
+    # AirKorea : 1
+    m_res.append("1")
+    for element in data:
+        try:
+            m_res.append(element.findtext("pm25Value"))
+        except ValueError:
+            m_res.append("0")
+        try:
+            m_res.append(element.findtext("pm10Value"))
+        except ValueError:
+            m_res.append("0")
+        try:
+            m_res.append(element.findtext("o3Value"))
+        except ValueError:
+            m_res.append("0")
+        try:
+            m_res.append(element.findtext("no2Value"))
+        except ValueError:
+            m_res.append("0")
+        try:
+            m_res.append(element.findtext("coValue"))
+        except ValueError:
+            m_res.append("0")
+        try:
+            m_res.append(element.findtext("so2Value"))
+        except ValueError:
+            m_res.append("0")
 
+        # 측정 시간
+        # element.findtext("dataTime")
+        break
+
+    print("m_res = {0}".format(m_res))
+    with open("sdatas.log", "w") as f:
+        f.write(",".join(m_res))
+
+    with open("sdatas.log", "r") as f:
+        read_data = f.read()
+        list_data = read_data.split(",")
+        num_data = list(map(float, list_data))
+        print("type:{0}, PM2.5:{1}, PM10:{2}, O3:{3}, NO2:{4}, CO:{5}, SO2:{6}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6]))
+
+    time.sleep(1)
 
 def stopThread(signum, frame):
     global exit_thread
@@ -140,26 +188,58 @@ def writeThread(ser):
     # 3600 is 1 Hour
     # threading.Timer(3600, writeThread, args=(ser,)).start()
 
+def requestThread(str_station):
+    query_params = "?" + urlencode({
+        quote_plus("serviceKey"): de_key,
+        quote_plus("returnType"): "xml",
+        quote_plus("numOfRows"): "1",
+        quote_plus("pageNo"): "1",
+        quote_plus("stationName"): str_station,
+        quote_plus("dataTerm"): "DAILY",
+        quote_plus("ver"): "1.3"
+    })
+
+    req_body = requests.get(url_data + query_params)
+    root_data = ElementTree.fromstring(req_body.text)
+
+    iter_data = root_data.iter(tag="item")
+    parsingResOfAirKorea(iter_data)
+
+    threading.Timer(3600, requestThread, args=(str_station)).start()
 
 
 if __name__ == "__main__":
     # 종료 시그널 등록
     signal.signal(signal.SIGINT, stopThread)
 
-    # 시리얼 열기
-    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
+    try:
+        # Used Air Korea
+        cmd = sys.argv[1]
+        try:
+            str_station = station.StationData().getStationName(cmd)
+            print("str_station = {0}".format(str_station))
+            requestThread(str_station)
+        except KeyError:
+            print("Not Found Station, Retry Again")
 
-    print("is_open = %d"%ser.is_open)
+    except IndexError:
+        # Used Sensor
+        # 시리얼 열기
+        ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
 
-    if ser.is_open:
-        # Request Command
-        writeThread(ser)
+        print("is_open = %d"%ser.is_open)
 
-        # 시리얼 읽기 쓰레드 생성
-        r_thread = threading.Thread(target=readThread, args=(ser,))
-        r_thread.start()
+        if ser.is_open:
+            # Request Command
+            writeThread(ser)
+
+            # 시리얼 읽기 쓰레드 생성
+            r_thread = threading.Thread(target=readThread, args=(ser,))
+            r_thread.start()
 
         
-# cmd 
-# /usr/bin/python3 /home/pi/work/pysensor/main.py
+# Air Korea Command
+# /usr/bin/python3 /home/pi/work/pysensor/main.py 525
 
+# Sensor Command
+# /usr/bin/python3 /home/pi/work/pysensor/main.py
