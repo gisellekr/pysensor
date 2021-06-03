@@ -213,37 +213,44 @@ def requestThread(str_station):
 
 
 if __name__ == "__main__":
-    # 종료 시그널 등록
-    signal.signal(signal.SIGINT, stopThread)
-
     try:
-        # Used Air Korea
-        cmd = sys.argv[1]
-        try:
-            str_station = station.StationData().getStationName(cmd)
-            print("str_station = {0}".format(str_station))
-            requestThread(str_station)
-        except KeyError:
-            print("Not Found Station, Retry Again")
+        with open("configdata.conf", "r") as f:
+            read_data = f.readline()
+            print("read_data = {0}".format(read_data))
+            data_array = read_data.split("=")
+            print("data_array[0]={0}, data_array[1]={1}".format(data_array[0], data_array[1]))
+            if data_array[1].strip() == "ON":
+                ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
+                if ser.is_open:
+                    # Request Command for Sensor data
+                    writeThread(ser)
 
-    except IndexError:
-        # Used Sensor
-        # 시리얼 열기
-        ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
+                    # Receive for Sensor data
+                    r_thread = threading.Thread(target=readThread, args=(ser,))
+                    r_thread.start()
+                else:
+                    print("Cannot connect serial port(/dev/ttyUSB0)")
+            elif data_array[1].strip() == "OFF":
+            # elif "OFF" in data_array[1]:
+                read_data = f.readline()
+                print("read_data={0}".format(read_data[0]))
+                data_array = read_data.split("=")
+                print("data_array[0]={0}, data_array[1]={1}".format(data_array[0], data_array[1]))
+                idx_station = data_array[1].strip()
+                try:
+                    str_station = station.StationData().getStationName(idx_station)
+                    print("str_station={0}".format(str_station))
+                    requestThread(str_station)
+                except KeyError:
+                    print("Not found station, Check to station index")
 
-        print("is_open = %d"%ser.is_open)
 
-        if ser.is_open:
-            # Request Command
-            writeThread(ser)
-
-            # 시리얼 읽기 쓰레드 생성
-            r_thread = threading.Thread(target=readThread, args=(ser,))
-            r_thread.start()
+            else:
+                print("Cannot find config data, Check to configdata.conf")
+    except FileNotFoundError:
+        print("No such file: configdata.conf")
 
         
-# Air Korea Command (525 is station number, refer to station.txt file)
-# /usr/bin/python3 /home/pi/work/pysensor/main.py 525
-
-# Sensor Command
+# State Change by configdata.conf
+# Command
 # /usr/bin/python3 /home/pi/work/pysensor/main.py
