@@ -26,7 +26,7 @@ def parsingResOfSensor(data):
     # m_res = {}
     m_res = []
     # Sensor : 0
-    m_res.append("0")
+    m_res.append(0)
     crc_data = []
     for val in range(len(data)-1):
         crc_data.append(data[val])
@@ -109,7 +109,7 @@ def parsingResOfSensor(data):
             read_data = f.read()
             list_data = read_data.split(",")
             num_data = list(map(float, list_data))
-            print("Type:{0}, CO2:{1}, VOC:{2}, Humidity:{3}, Temperature:{4}, PM1:{5}, PM2.5:{6}, PM10:{7}, VOC now:{8}, VOC rvalue:{9}, VOC now rvalue:{10}, Reserve:{11}, State:{12}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11]), num_data[12])
+            print("Type:{0}, CO2:{1}, VOC:{2}, Humidity:{3}, Temperature:{4}, PM1:{5}, PM2.5:{6}, PM10:{7}, VOC now:{8}, VOC rvalue:{9}, VOC now rvalue:{10}, Reserve:{11}, State:{12}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12]))
 
         time.sleep(1)
 
@@ -149,10 +149,10 @@ def parsingResOfAirKorea(data):
         break
 
     print("m_res = {0}".format(m_res))
-    with open("sdatas.log", "w") as f:
+    with open("sdata.log", "w") as f:
         f.write(",".join(m_res))
 
-    with open("sdatas.log", "r") as f:
+    with open("sdata.log", "r") as f:
         read_data = f.read()
         list_data = read_data.split(",")
         num_data = list(map(float, list_data))
@@ -184,9 +184,10 @@ def writeThread(ser):
     send_data.append(makeCrc(send_data))
     print(bytearray(send_data))
     ser.write(bytearray(send_data))
-    threading.Timer(10, writeThread, args=(ser,)).start()
+    # 10s by Test
+    # threading.Timer(10, writeThread, args=(ser,)).start()
     # 3600 is 1 Hour
-    # threading.Timer(3600, writeThread, args=(ser,)).start()
+    threading.Timer(3600, writeThread, args=(ser,)).start()
 
 def requestThread(str_station):
     query_params = "?" + urlencode({
@@ -205,7 +206,10 @@ def requestThread(str_station):
     iter_data = root_data.iter(tag="item")
     parsingResOfAirKorea(iter_data)
 
-    threading.Timer(3600, requestThread, args=(str_station)).start()
+    # 10s by Test
+    threading.Timer(10, requestThread, args=(str_station,)).start()
+    # 3600 is 1 Hour
+    threading.Timer(3600, requestThread, args=(str_station,)).start()
 
 
 if __name__ == "__main__":
@@ -238,7 +242,7 @@ if __name__ == "__main__":
             r_thread.start()
 
         
-# Air Korea Command
+# Air Korea Command (525 is station number, refer to station.txt file)
 # /usr/bin/python3 /home/pi/work/pysensor/main.py 525
 
 # Sensor Command
