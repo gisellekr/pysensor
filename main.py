@@ -116,6 +116,14 @@ def parsingResOfSensor(data):
 def parsingResOfAirKorea(data):
     m_res = []
 
+    try:
+        with open("sdata.log", "r") as f:
+            read_data = f.read()
+            latest_data = read_data.split(",")
+            # print("latest_data = {0}".format(latest_data))
+    except FileNotFoundError:
+        latest_data = ["1", "0", "0", "0", "0", "0", "0"]
+
     # AirKorea : 1
     m_res.append("1")
     for element in data:
@@ -125,37 +133,37 @@ def parsingResOfAirKorea(data):
             int(pm25)
             m_res.append(pm25)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[1])
         try:
             pm10 = element.findtext("pm10Value")
             int(pm10)
             m_res.append(pm10)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[2])
         try:
             o3 = element.findtext("o3Value")
             float(o3)
             m_res.append(o3)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[3])
         try:
             no2 = element.findtext("no2Value")
             float(no2)
             m_res.append(no2)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[4])
         try:
             co = element.findtext("coValue")
             float(co)
             m_res.append(co)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[5])
         try:
             so2 = element.findtext("so2Value")
             float(so2)
             m_res.append(so2)
         except ValueError:
-            m_res.append("0")
+            m_res.append(latest_data[6])
 
         # 측정 시간
         # element.findtext("dataTime")
