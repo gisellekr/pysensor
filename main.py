@@ -120,27 +120,40 @@ def parsingResOfAirKorea(data):
     m_res.append("1")
     for element in data:
         try:
-            m_res.append(int(element.findtext("pm25Value")))
+            pm25 = element.findtext("pm25Value")
+            # Value Check
+            int(pm25)
+            m_res.append(pm25)
         except ValueError:
             m_res.append("0")
         try:
-            m_res.append(int(element.findtext("pm10Value")))
+            pm10 = element.findtext("pm10Value")
+            int(pm10)
+            m_res.append(pm10)
         except ValueError:
             m_res.append("0")
         try:
-            m_res.append(float(element.findtext("o3Value")))
+            o3 = element.findtext("o3Value")
+            float(o3)
+            m_res.append(o3)
         except ValueError:
             m_res.append("0")
         try:
-            m_res.append(float(element.findtext("no2Value")))
+            no2 = element.findtext("no2Value")
+            float(no2)
+            m_res.append(no2)
         except ValueError:
             m_res.append("0")
         try:
-            m_res.append(float(element.findtext("coValue")))
+            co = element.findtext("coValue")
+            float(co)
+            m_res.append(co)
         except ValueError:
             m_res.append("0")
         try:
-            m_res.append(float(element.findtext("so2Value")))
+            so2 = element.findtext("so2Value")
+            float(so2)
+            m_res.append(so2)
         except ValueError:
             m_res.append("0")
 
