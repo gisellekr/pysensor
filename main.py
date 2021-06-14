@@ -120,6 +120,9 @@ def parsingResOfAirKorea(data):
         with open("sdata.log", "r") as f:
             read_data = f.read()
             latest_data = read_data.split(",")
+            # Sensor Data 파일인지 체크
+            if len(latest_data) > 7:
+                latest_data = ["1", "0", "0", "0", "0", "0", "0"]
             # print("latest_data = {0}".format(latest_data))
     except FileNotFoundError:
         latest_data = ["1", "0", "0", "0", "0", "0", "0"]
