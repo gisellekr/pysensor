@@ -227,7 +227,7 @@ def requestThread(str_station, idx_station):
     # 10s by Test
     # threading.Timer(10, requestThread, args=(str_station,)).start()
     # 3600 is 1 Hour
-    threading.Timer(3600, requestThread, args=(str_station, idx_station)).start()
+    threading.Timer(3600, requestThread, args=(str_station, idx_station,)).start()
 
 def requestAirKorea(str_station):
     query_params = "?" + urlencode({
@@ -288,9 +288,9 @@ def requestWeather(str_station):
     default_body = requests.get(url_weather + default_params)
     default_data = ElementTree.fromstring(default_body.text)
     default_items = default_data.iter(tag="items")
-    default_array = [0] * 14
+    default_array = ["0"] * 14
     default_result = parsingDefaultWeather(default_array, default_items, default_date)
-    # print("default_result={0}".format(default_result))
+    print("default_result={0}".format(default_result))
 
     # 현재 날자 현재 시간 Data로 Update
     current_params = "?" + urlencode({
@@ -307,7 +307,8 @@ def requestWeather(str_station):
     current_data = ElementTree.fromstring(current_body.text)
     current_items = current_data.iter(tag="items")
     current_result = parsingCurrentWeather(default_array, current_items)
-    # print("current_result={0}".format(current_result))
+    print("current_result={0}".format(current_result))
+
     with open("wdata.log", "w") as f:
         f.write(",".join(current_result))
 
