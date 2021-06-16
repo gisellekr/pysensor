@@ -217,12 +217,12 @@ def writeThread(ser):
     # 3600 is 1 Hour
     threading.Timer(3600, writeThread, args=(ser,)).start()
 
-def requestThread(str_station):
+def requestThread(str_station, idx_station):
     # AirKorea
     requestAirKorea(str_station)
 
     # Weather
-    requestWeather(str_station)
+    requestWeather(idx_station)
 
     # 10s by Test
     # threading.Timer(10, requestThread, args=(str_station,)).start()
@@ -450,7 +450,7 @@ if __name__ == "__main__":
                 try:
                     str_station = station.StationData().getStationName(idx_station)
                     print("str_station={0}".format(str_station))
-                    requestThread(str_station)
+                    requestThread(str_station, idx_station)
                 except KeyError:
                     print("Not found station, Check to station index")
 
