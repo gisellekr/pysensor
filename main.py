@@ -5,13 +5,17 @@ import time
 # import pickle
 import sys
 import requests
+import datetime
 import station
+import location_x
+import location_y
 
 from urllib.parse import urlencode, quote_plus
 from xml.etree import ElementTree
 
 url_station = "http://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList"
 url_data = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty"
+url_weather = "http://apis.data.go.kr/1360000/VilageFcstInfoService/getVilageFcst"
 de_key = "FiT7JZmgP3ia3n3gZS+0RAryoftJJxWjSOaRm2BR1dOoJRHeR1vOzwpAVDN9zb0OzAJIH5hqN/8EkLkZsKlP1Q=="
 
 def makeCrc(data):
@@ -98,7 +102,7 @@ def parsingResOfSensor(data):
 
         m_res.append(data[27])
 
-        print(m_res)
+        # print(m_res)
         str_data = list(map(str, m_res))
         with open("sdata.log", "w") as f:
             # pickle.dump(m_res, f)
@@ -172,7 +176,7 @@ def parsingResOfAirKorea(data):
         # element.findtext("dataTime")
         break
 
-    print("m_res = {0}".format(m_res))
+    # print("m_res = {0}".format(m_res))
     with open("sdata.log", "w") as f:
         f.write(",".join(m_res))
 
@@ -206,7 +210,7 @@ def readThread(ser):
 def writeThread(ser):
     send_data = [17, 2, 1, 0]
     send_data.append(makeCrc(send_data))
-    print(bytearray(send_data))
+    # print(bytearray(send_data))
     ser.write(bytearray(send_data))
     # 10s by Test
     # threading.Timer(10, writeThread, args=(ser,)).start()
@@ -214,6 +218,18 @@ def writeThread(ser):
     threading.Timer(3600, writeThread, args=(ser,)).start()
 
 def requestThread(str_station):
+    # AirKorea
+    requestAirKorea(str_station)
+
+    # Weather
+    requestWeather(str_station)
+
+    # 10s by Test
+    # threading.Timer(10, requestThread, args=(str_station,)).start()
+    # 3600 is 1 Hour
+    threading.Timer(3600, requestThread, args=(str_station,)).start()
+
+def requestAirKorea(str_station):
     query_params = "?" + urlencode({
         quote_plus("serviceKey"): de_key,
         quote_plus("returnType"): "xml",
@@ -230,11 +246,181 @@ def requestThread(str_station):
     iter_data = root_data.iter(tag="item")
     parsingResOfAirKorea(iter_data)
 
-    # 10s by Test
-    # threading.Timer(10, requestThread, args=(str_station,)).start()
-    # 3600 is 1 Hour
-    threading.Timer(3600, requestThread, args=(str_station,)).start()
+def requestWeather(str_station):
+    curr = datetime.datetime.now()
+    default_date = curr_date = curr.strftime("%Y%m%d")
+    default_time = "0200"
+    if curr.hour < 2:
+        m_curr = curr - datetime.timedelta(days=1)
+        curr_date = m_curr.strftime("%Y%m%d")
+        curr_time = "2300"
+    elif curr.hour < 5:
+        curr_time = "0200"
+    elif curr.hour < 8:
+        curr_time = "0500"
+    elif curr.hour < 11:
+        curr_time = "0800"
+    elif curr.hour < 14:
+        curr_time = "1100"
+    elif curr.hour < 17:
+        curr_time = "1400"
+    elif curr.hour < 20:
+        curr_time = "1700"
+    elif curr.hour < 23:
+        curr_time = "2000"
+    else:
+        curr_time = "2300"
+        
+    nx = location_x.LocationXData().getLocationX(str_station)
+    ny = location_y.LocationYData().getLocationY(str_station)
+    
+    # 현재 날자 2시 Data를 읽어서 Default 값을 설정
+    default_params = "?" + urlencode({
+        quote_plus("ServiceKey"): de_key,
+        quote_plus("pageNo"): "1",
+        quote_plus("numOfRows"): "250",
+        quote_plus("dataType"): "xml",
+        quote_plus("base_date"): curr_date,
+        quote_plus("base_time"): default_time,
+        quote_plus("nx"): nx,
+        quote_plus("ny"): ny
+    })
+    default_body = requests.get(url_weather + default_params)
+    default_data = ElementTree.fromstring(default_body.text)
+    default_items = default_data.iter(tag="items")
+    default_array = [0] * 14
+    default_result = parsingDefaultWeather(default_array, default_items, default_date)
+    # print("default_result={0}".format(default_result))
 
+    # 현재 날자 현재 시간 Data로 Update
+    current_params = "?" + urlencode({
+        quote_plus("ServiceKey"): de_key,
+        quote_plus("pageNo"): "1",
+        quote_plus("numOfRows"): "14",
+        quote_plus("dataType"): "xml",
+        quote_plus("base_date"): curr_date,
+        quote_plus("base_time"): curr_time,
+        quote_plus("nx"): nx,
+        quote_plus("ny"): ny
+    })
+    current_body = requests.get(url_weather + current_params)
+    current_data = ElementTree.fromstring(current_body.text)
+    current_items = current_data.iter(tag="items")
+    current_result = parsingCurrentWeather(default_array, current_items)
+    # print("current_result={0}".format(current_result))
+    with open("wdata.log", "w") as f:
+        f.write(",".join(current_result))
+
+    with open("wdata.log", "r") as f:
+        read_data = f.read()
+        list_data = read_data.split(",")
+        num_data = list(map(float, list_data))
+        print("POP:{0}, PTY:{1}, R06:{2}, REH:{3}, S06:{4}, SKY:{5}, T3H:{6}, TMN:{7}, TMX:{8}, UUU:{9}, VVV:{10}, WAV:{11}, VEC:{12}, WSD:{13}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12], num_data[13]))
+
+def parsingDefaultWeather(m_result, datas, date):
+    
+    getPOP = getPTY = getR06 = getREH = getS06 = getSKY = getT3H = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
+    for item in datas:
+        for element in item:
+            category = element.findtext("category")
+            fcst_date = element.findtext("fcstDate")
+            if (getPOP == False) and (category == "POP") and (fcst_date == date):
+                m_result[0] = element.findtext("fcstValue")
+                getPOP = True
+            elif (getPTY == False) and (category == "PTY") and (fcst_date == date):
+                m_result[1] = element.findtext("fcstValue")
+                getPTY = True
+            elif (getR06 == False) and (category == "R06") and (fcst_date == date):
+                m_result[2] = element.findtext("fcstValue")
+                getR06 = True
+            elif (getREH == False) and (category == "REH") and (fcst_date == date):
+                m_result[3] = element.findtext("fcstValue")
+                getREH = True
+            elif (getS06 == False) and (category == "S06") and (fcst_date == date):
+                m_result[4] = element.findtext("fcstValue")
+                getS06 = True
+            elif (getSKY == False) and (category == "SKY") and (fcst_date == date):
+                m_result[5] = element.findtext("fcstValue")
+                getSKY = True
+            elif (getT3H == False) and (category == "T3H") and (fcst_date == date):
+                m_result[6] = element.findtext("fcstValue")
+                getT3H = True
+            elif (getTMN == False) and (category == "TMN") and (fcst_date == date):
+                m_result[7] = element.findtext("fcstValue")
+                getTMN = True
+            elif (getTMX == False) and (category == "TMX") and (fcst_date == date):
+                m_result[8] = element.findtext("fcstValue")
+                getTMX = True
+            elif (getUUU == False) and (category == "UUU") and (fcst_date == date):
+                m_result[9] = element.findtext("fcstValue")
+                getUUU = True
+            elif (getVVV == False) and (category == "VVV") and (fcst_date == date):
+                m_result[10] = element.findtext("fcstValue")
+                getVVV = True
+            elif (getWAV == False) and (category == "WAV") and (fcst_date == date):
+                m_result[11] = element.findtext("fcstValue")
+                getWAV = True
+            elif (getVEC == False) and (category == "VEC") and (fcst_date == date):
+                m_result[12] = element.findtext("fcstValue")
+                getVEC = True
+            elif (getWSD == False) and (category == "WSD") and (fcst_date == date):
+                m_result[13] = element.findtext("fcstValue")
+                getWSD = True
+    return m_result
+
+def parsingCurrentWeather(m_result, datas):
+    
+    getPOP = getPTY = getR06 = getREH = getS06 = getSKY = getT3H = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
+    for item in datas:
+        for element in item:
+            category = element.findtext("category")
+            # 검색 시간 Data만 Update 해야 함
+            if (getPOP == True) and (category == "POP"):
+                break
+
+            if (getPOP == False) and (category == "POP"):
+                m_result[0] = element.findtext("fcstValue")
+                getPOP = True
+            elif (getPTY == False) and (category == "PTY"):
+                m_result[1] = element.findtext("fcstValue")
+                getPTY = True
+            elif (getR06 == False) and (category == "R06"):
+                m_result[2] = element.findtext("fcstValue")
+                getR06 = True
+            elif (getREH == False) and (category == "REH"):
+                m_result[3] = element.findtext("fcstValue")
+                getREH = True
+            elif (getS06 == False) and (category == "S06"):
+                m_result[4] = element.findtext("fcstValue")
+                getS06 = True
+            elif (getSKY == False) and (category == "SKY"):
+                m_result[5] = element.findtext("fcstValue")
+                getSKY = True
+            elif (getT3H == False) and (category == "T3H"):
+                m_result[6] = element.findtext("fcstValue")
+                getT3H = True
+            elif (getTMN == False) and (category == "TMN"):
+                m_result[7] = element.findtext("fcstValue")
+                getTMN = True
+            elif (getTMX == False) and (category == "TMX"):
+                m_result[8] = element.findtext("fcstValue")
+                getTMX = True
+            elif (getUUU == False) and (category == "UUU"):
+                m_result[9] = element.findtext("fcstValue")
+                getUUU = True
+            elif (getVVV == False) and (category == "VVV"):
+                m_result[10] = element.findtext("fcstValue")
+                getVVV = True
+            elif (getWAV == False) and (category == "WAV"):
+                m_result[11] = element.findtext("fcstValue")
+                getWAV = True
+            elif (getVEC == False) and (category == "VEC"):
+                m_result[12] = element.findtext("fcstValue")
+                getVEC = True
+            elif (getWSD == False) and (category == "WSD"):
+                m_result[13] = element.findtext("fcstValue")
+                getWSD = True
+    return m_result
 
 if __name__ == "__main__":
     try:
