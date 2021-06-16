@@ -227,7 +227,7 @@ def requestThread(str_station, idx_station):
     # 10s by Test
     # threading.Timer(10, requestThread, args=(str_station,)).start()
     # 3600 is 1 Hour
-    threading.Timer(3600, requestThread, args=(str_station,)).start()
+    threading.Timer(3600, requestThread, args=(str_station, idx_station)).start()
 
 def requestAirKorea(str_station):
     query_params = "?" + urlencode({
