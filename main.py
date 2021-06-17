@@ -9,6 +9,7 @@ import datetime
 import station
 import location_x
 import location_y
+import convertWeather
 
 from urllib.parse import urlencode, quote_plus
 from xml.etree import ElementTree
@@ -315,8 +316,10 @@ def requestWeather(str_station):
     with open("wdata.log", "r") as f:
         read_data = f.read()
         list_data = read_data.split(",")
-        num_data = list(map(float, list_data))
-        print("POP:{0}, PTY:{1}, R06:{2}, REH:{3}, S06:{4}, SKY:{5}, T3H:{6}, TMN:{7}, TMX:{8}, UUU:{9}, VVV:{10}, WAV:{11}, VEC:{12}, WSD:{13}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12], num_data[13]))
+        # num_data = list(map(float, list_data))
+        # print("POP:{0}, PTY:{1}, R06:{2}, REH:{3}, S06:{4}, SKY:{5}, T3H:{6}, TMN:{7}, TMX:{8}, UUU:{9}, VVV:{10}, WAV:{11}, VEC:{12}, WSD:{13}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12], num_data[13]))
+    
+        convertWeather.ConvertData().printData(list_data)
 
 def parsingDefaultWeather(m_result, datas, date):
     
