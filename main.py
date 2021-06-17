@@ -207,7 +207,7 @@ def readThread(ser):
         time.sleep(1)
 
 
-def writeThread(ser):
+def writeThread(ser, timer):
     send_data = [17, 2, 1, 0]
     send_data.append(makeCrc(send_data))
     # print(bytearray(send_data))
@@ -215,9 +215,9 @@ def writeThread(ser):
     # 10s by Test
     # threading.Timer(10, writeThread, args=(ser,)).start()
     # 3600 is 1 Hour
-    threading.Timer(3600, writeThread, args=(ser,)).start()
+    threading.Timer(timer, writeThread, args=(ser, timer,)).start()
 
-def requestThread(str_station, idx_station):
+def requestThread(str_station, idx_station, timer):
     # AirKorea
     requestAirKorea(str_station)
 
@@ -227,7 +227,7 @@ def requestThread(str_station, idx_station):
     # 10s by Test
     # threading.Timer(10, requestThread, args=(str_station, idx_station,)).start()
     # 3600 is 1 Hour
-    threading.Timer(3600, requestThread, args=(str_station, idx_station,)).start()
+    threading.Timer(timer, requestThread, args=(str_station, idx_station, timer,)).start()
 
 def requestAirKorea(str_station):
     query_params = "?" + urlencode({
@@ -426,32 +426,39 @@ def parsingCurrentWeather(m_result, datas):
 if __name__ == "__main__":
     try:
         with open("configdata.conf", "r") as f:
-            read_data = f.readline()
-            print("read_data = {0}".format(read_data))
-            data_array = read_data.split("=")
-            print("data_array[0]={0}, data_array[1]={1}".format(data_array[0], data_array[1]))
-            if data_array[1].strip() == "ON":
+            read_sensor = f.readline()
+            sensor_array = read_sensor.split("=")
+            print("sensor_array[0]={0}, sensor_array[1]={1}".format(sensor_array[0], sensor_array[1]))
+            if sensor_array[1].strip() == "ON":
                 ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0)
+                read_timer = f.readline()
+                timer_array = read_timer.split("=")
+                print("timer_array[0]={0}, timer_array[1]={1}".format(timer_array[0], timer_array[1]))
+                timer = int(timer_array[1].strip())
+
                 if ser.is_open:
                     # Request Command for Sensor data
-                    writeThread(ser)
+                    writeThread(ser, timer)
 
                     # Receive for Sensor data
                     r_thread = threading.Thread(target=readThread, args=(ser,))
                     r_thread.start()
                 else:
                     print("Cannot connect serial port(/dev/ttyUSB0)")
-            elif data_array[1].strip() == "OFF":
-            # elif "OFF" in data_array[1]:
-                read_data = f.readline()
-                print("read_data={0}".format(read_data[0]))
-                data_array = read_data.split("=")
-                print("data_array[0]={0}, data_array[1]={1}".format(data_array[0], data_array[1]))
-                idx_station = data_array[1].strip()
+            elif sensor_array[1].strip() == "OFF":
+                read_timer = f.readline()
+                timer_array = read_timer.split("=")
+                print("timer_array[0]={0}, timer_array[1]={1}".format(timer_array[0], timer_array[1]))
+                timer = int(timer_array[1].strip())
+
+                read_station = f.readline()
+                station_array = read_station.split("=")
+                print("station_array[0]={0}, station_array[1]={1}".format(station_array[0], station_array[1]))
+                idx_station = station_array[1].strip()
                 try:
                     str_station = station.StationData().getStationName(idx_station)
                     print("str_station={0}".format(str_station))
-                    requestThread(str_station, idx_station)
+                    requestThread(str_station, idx_station, timer)
                 except KeyError:
                     print("Not found station, Check to station index")
 
