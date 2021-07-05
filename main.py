@@ -320,13 +320,13 @@ def requestWeather(str_station):
         read_data = f.read()
         list_data = read_data.split(",")
         # num_data = list(map(float, list_data))
-        # print("POP:{0}, PTY:{1}, R06:{2}, REH:{3}, S06:{4}, SKY:{5}, T3H:{6}, TMN:{7}, TMX:{8}, UUU:{9}, VVV:{10}, WAV:{11}, VEC:{12}, WSD:{13}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12], num_data[13]))
+        # print("POP:{0}, PTY:{1}, PCP:{2}, REH:{3}, SNO:{4}, SKY:{5}, TMP:{6}, TMN:{7}, TMX:{8}, UUU:{9}, VVV:{10}, WAV:{11}, VEC:{12}, WSD:{13}".format(num_data[0], num_data[1], num_data[2], num_data[3], num_data[4], num_data[5], num_data[6], num_data[7], num_data[8], num_data[9], num_data[10], num_data[11], num_data[12], num_data[13]))
     
         convertWeather.ConvertData().printData(list_data)
 
 def parsingDefaultWeather(m_result, datas, date):
     
-    getPOP = getPTY = getR06 = getREH = getS06 = getSKY = getT3H = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
+    getPOP = getPTY = getPCP = getREH = getSNO = getSKY = getTMP = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
     for item in datas:
         for element in item:
             category = element.findtext("category")
@@ -337,21 +337,25 @@ def parsingDefaultWeather(m_result, datas, date):
             elif (getPTY == False) and (category == "PTY") and (fcst_date == date):
                 m_result[1] = element.findtext("fcstValue")
                 getPTY = True
-            elif (getR06 == False) and (category == "R06") and (fcst_date == date):
-                m_result[2] = element.findtext("fcstValue")
-                getR06 = True
+            elif (getPCP == False) and (category == "PCP") and (fcst_date == date):
+                print("PCP={0}".format(element.findtext("fcstValue")))
+                arrayPCP = element.findtext("fcstValue").split("mm")
+                m_result[2] = arrayPCP[0]
+                getPCP = True
             elif (getREH == False) and (category == "REH") and (fcst_date == date):
                 m_result[3] = element.findtext("fcstValue")
                 getREH = True
-            elif (getS06 == False) and (category == "S06") and (fcst_date == date):
-                m_result[4] = element.findtext("fcstValue")
-                getS06 = True
+            elif (getSNO == False) and (category == "SNO") and (fcst_date == date):
+                print("SNO={0}".format(element.findtext("fcstValue")))
+                arraySNO = element.findtext("fcstValue").split("cm")
+                m_result[4] = arraySNO[0]
+                getSNO = True
             elif (getSKY == False) and (category == "SKY") and (fcst_date == date):
                 m_result[5] = element.findtext("fcstValue")
                 getSKY = True
-            elif (getT3H == False) and (category == "T3H") and (fcst_date == date):
+            elif (getTMP == False) and (category == "TMP") and (fcst_date == date):
                 m_result[6] = element.findtext("fcstValue")
-                getT3H = True
+                getTMP = True
             elif (getTMN == False) and (category == "TMN") and (fcst_date == date):
                 m_result[7] = element.findtext("fcstValue")
                 getTMN = True
@@ -377,7 +381,7 @@ def parsingDefaultWeather(m_result, datas, date):
 
 def parsingCurrentWeather(m_result, datas):
     
-    getPOP = getPTY = getR06 = getREH = getS06 = getSKY = getT3H = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
+    getPOP = getPTY = getPCP = getREH = getSNO = getSKY = getTMP = getTMN = getTMX = getUUU = getVVV = getWAV = getVEC = getWSD = False
     for item in datas:
         for element in item:
             category = element.findtext("category")
@@ -391,21 +395,23 @@ def parsingCurrentWeather(m_result, datas):
             elif (getPTY == False) and (category == "PTY"):
                 m_result[1] = element.findtext("fcstValue")
                 getPTY = True
-            elif (getR06 == False) and (category == "R06"):
-                m_result[2] = element.findtext("fcstValue")
-                getR06 = True
+            elif (getPCP == False) and (category == "PCP"):
+                arrayPCP = element.findtext("fcstValue").split("mm")
+                m_result[2] = arrayPCP[0]
+                getPCP = True
             elif (getREH == False) and (category == "REH"):
                 m_result[3] = element.findtext("fcstValue")
                 getREH = True
-            elif (getS06 == False) and (category == "S06"):
-                m_result[4] = element.findtext("fcstValue")
-                getS06 = True
+            elif (getSNO == False) and (category == "SNO"):
+                arraySNO = element.findtext("fcstValue").split("cm")
+                m_result[4] = arraySNO[0]
+                getSNO = True
             elif (getSKY == False) and (category == "SKY"):
                 m_result[5] = element.findtext("fcstValue")
                 getSKY = True
-            elif (getT3H == False) and (category == "T3H"):
+            elif (getTMP == False) and (category == "TMP"):
                 m_result[6] = element.findtext("fcstValue")
-                getT3H = True
+                getTMP = True
             elif (getTMN == False) and (category == "TMN"):
                 m_result[7] = element.findtext("fcstValue")
                 getTMN = True

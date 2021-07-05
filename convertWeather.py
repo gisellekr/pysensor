@@ -2,11 +2,11 @@ class ConvertData:
     def printData(self, data):
         pop = "강수확률 : " + data[0] + "%"
         pty = self.convertPTY(data[1])
-        r06 = self.convertR06(data[2])
+        pcp = self.convertPCP(data[2])
         reh = "습도 : " + data[3] + "%"
-        s06 = self.convertS06(data[4])
+        sno = self.convertSNO(data[4])
         sky = self.convertSKY(data[5])
-        t3h = "3시간 기온 : " + data[6] + "℃"
+        tmp = "1시간 기온 : " + data[6] + "℃"
         tmn = "아침 최저기온 : " + data[7] + "℃"
         tmx = "낮 최고기온 : " + data[8] + "℃"
         uuu = self.convertUUU(data[9])
@@ -16,11 +16,11 @@ class ConvertData:
         wsd = "풍속 : " + data[13] + "m/s"
         print(pop)
         print(pty)
-        print(r06)
+        print(pcp)
         print(reh)
-        print(s06)
+        print(sno)
         print(sky)
-        print(t3h)
+        print(tmp)
         print(tmn)
         print(tmx)
         print(uuu)
@@ -42,50 +42,31 @@ class ConvertData:
             ret_value = ret_value + "눈"
         elif i_pty == 4:
             ret_value = ret_value + "소나기"
-        elif i_pty == 5:
-            ret_value = ret_value + "빗방울"
-        elif i_pty == 6:
-            ret_value = ret_value + "빗방울/눈날림"
-        elif i_pty == 7:
-            ret_value = ret_value + "눈날림"
+
         return ret_value
 
-    def convertR06(self, r06):
-        ret_value = "6시간 강수량 : "
-        f_r06 = float(r06)
-        if f_r06 < 0.1:
-            ret_value = ret_value + "없음"
-        elif f_r06 >= 0.1 and f_r06 < 1:
+    def convertPCP(self, pcp):
+        ret_value = "1시간 강수량 : "
+        f_pcp = float(pcp)
+        if f_pcp <= 1.0:
             ret_value = ret_value + "1mm 미만"
-        elif f_r06 >= 1 and f_r06 < 5:
-            ret_value = ret_value + "1~4mm"
-        elif f_r06 >= 5 and f_r06 < 10:
-            ret_value = ret_value + "5~9mm"
-        elif f_r06 >= 10 and f_r06 < 20:
-            ret_value = ret_value + "10~19mm"
-        elif f_r06 >= 20 and f_r06 < 40:
-            ret_value = ret_value + "20~39mm"
-        elif f_r06 >= 40 and f_r06 < 70:
-            ret_value = ret_value + "40~69mm"
+        elif f_pcp > 1.0 and f_pcp < 30:
+            ret_value = ret_value + "1~29mm"
+        elif f_pcp >= 30 and f_pcp < 50:
+            ret_value = ret_value + "30~50mm"
         else:
-            ret_value = ret_value + "70mm 이상"
+            ret_value = ret_value + "50mm 이상"
         return ret_value
 
-    def convertS06(self, s06):
-        ret_value = "6시간 신적설 : "
-        f_s06 = float(s06)
-        if f_s06 < 0.1:
-            ret_value = ret_value + "없음"
-        elif f_s06 >= 0.1 and f_s06 < 1:
+    def convertSNO(self, sno):
+        ret_value = "1시간 신적설 : "
+        f_sno = float(sno)
+        if f_sno <= 1:
             ret_value = ret_value + "1cm 미만"
-        elif f_s06 >= 1 and f_s06 < 5:
-            ret_value = ret_value + "1~4cm"
-        elif f_s06 >= 5 and f_s06 < 10:
-            ret_value = ret_value + "5~9cm"
-        elif f_s06 >= 10 and f_s06 < 20:
-            ret_value = ret_value + "10~19cm"
+        elif f_sno > 1 and f_sno < 5:
+            ret_value = ret_value + "1~4.9cm"
         else:
-            ret_value = ret_value + "20cm 이상"
+            ret_value = ret_value + "5cm 이상"
         return ret_value
 
     def convertSKY(self, sky):
@@ -122,39 +103,40 @@ class ConvertData:
     def convertVEC(self, vec):
         ret_value = "풍향 : "
         i_vec = int(vec)
-        if i_vec == 0:
+        con_vec = (i_vec + (22.5 * 0.5)) // 22.5
+        if con_vec == 0:
             ret_value = ret_value + "N"
-        elif i_vec > 0 and i_vec < 45:
+        elif con_vec == 1:
             ret_value = ret_value + "NNE"
-        elif i_vec == 45:
+        elif con_vec == 2:
             ret_value = ret_value + "NE"
-        elif i_vec > 45 and i_vec < 90:
-            ret_value = ret_value + "NEE"
-        elif i_vec == 90:
+        elif con_vec == 3:
+            ret_value = ret_value + "ENE"
+        elif con_vec == 4:
             ret_value = ret_value + "E"
-        elif i_vec > 90 and i_vec < 135:
+        elif con_vec == 5:
             ret_value = ret_value + "ESE"
-        elif i_vec == 135:
+        elif con_vec == 6:
             ret_value = ret_value + "SE"
-        elif i_vec > 135 and i_vec < 180:
-            ret_value = ret_value + "SES"
-        elif i_vec == 180:
+        elif con_vec == 7:
+            ret_value = ret_value + "SSE"
+        elif con_vec == 8:
             ret_value = ret_value + "S"
-        elif i_vec > 180 and i_vec < 225:
+        elif con_vec == 9:
             ret_value = ret_value + "SSW"
-        elif i_vec == 225:
+        elif con_vec == 10:
             ret_value = ret_value + "SW"
-        elif i_vec > 225 and i_vec < 270:
-            ret_value = ret_value + "SWW"
-        elif i_vec == 270:
+        elif con_vec == 11:
+            ret_value = ret_value + "WSW"
+        elif con_vec == 12:
             ret_value = ret_value + "W"
-        elif i_vec > 270 and i_vec < 315:
+        elif con_vec == 13:
             ret_value = ret_value + "WNW"
-        elif i_vec == 315:
+        elif con_vec == 14:
             ret_value = ret_value + "NW"
-        elif i_vec > 315 and i_vec > 360:
-            ret_value = ret_value + "NWN"
-        elif i_vec == 360:
+        elif con_vec == 15:
+            ret_value = ret_value + "NNW"
+        elif con_vec == 16:
             ret_value = ret_value + "N"
         return ret_value
 
