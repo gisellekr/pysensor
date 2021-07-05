@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 url_station = "http://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList"
 url_data = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty"
 url_weather = "http://apis.data.go.kr/1360000/VilageFcstInfoService/getVilageFcst"
+url_weather20 = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
 de_key = "FiT7JZmgP3ia3n3gZS+0RAryoftJJxWjSOaRm2BR1dOoJRHeR1vOzwpAVDN9zb0OzAJIH5hqN/8EkLkZsKlP1Q=="
 
 def makeCrc(data):
@@ -286,7 +287,8 @@ def requestWeather(str_station):
         quote_plus("nx"): nx,
         quote_plus("ny"): ny
     })
-    default_body = requests.get(url_weather + default_params)
+    # default_body = requests.get(url_weather + default_params)
+    default_body = requests.get(url_weather20 + default_params)
     default_data = ElementTree.fromstring(default_body.text)
     default_items = default_data.iter(tag="items")
     default_array = ["0"] * 14
@@ -304,7 +306,8 @@ def requestWeather(str_station):
         quote_plus("nx"): nx,
         quote_plus("ny"): ny
     })
-    current_body = requests.get(url_weather + current_params)
+    # current_body = requests.get(url_weather + current_params)
+    current_body = requests.get(url_weather20 + current_params)
     current_data = ElementTree.fromstring(current_body.text)
     current_items = current_data.iter(tag="items")
     current_result = parsingCurrentWeather(default_array, current_items)
